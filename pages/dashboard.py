@@ -52,7 +52,7 @@ def get_coin_image(coin_id):
 # =======================
 # Dashboard Coinsight
 # =======================
-with st.spinner("Loading market data..."):
+with st.spinner("Loading..."):
     df_all = get_all_coins(total_pages=2)  # hingga 1000 coin
     trending_df = get_trending_coins()
 

@@ -68,7 +68,8 @@ with price_history:
             data = yf.Ticker(ticker).history(period=period, interval=interval)
             return data
         
-        df = fetch_weekly_price_history(ticker, selected_period, interval='1d')
+        with st.spinner("Loading..."): # ini spinner
+            df = fetch_weekly_price_history(ticker, selected_period, interval='1d')
             
         if df.empty:
             st.warning("Data tidak tersedia untuk kombinasi ini.")
@@ -199,7 +200,7 @@ with forecast:
         period_hist = '1y'
 
     if st.button("Show Graph", key="grafik_prediksi"):
-        with st.spinner("Loading prediction..."):
+        with st.spinner("Loading..."):
             # --- Ambil data historis ---
             df = yf.Ticker(ticker).history(period=period_hist)
             df['MA_21'] = df['Close'].rolling(window=21).mean()
