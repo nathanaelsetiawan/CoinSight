@@ -3,10 +3,10 @@ import requests
 import pandas as pd
 import time
 
-# Ambil data koin per halaman (maks 250 per page)
 @st.cache_data(ttl=120)
 def get_all_coins(vs_currency='usd', total_pages=2, delay=1):
     all_data = []
+    
     for page in range(1, total_pages + 1):
         url = "https://api.coingecko.com/api/v3/coins/markets"
         params = {
@@ -17,14 +17,39 @@ def get_all_coins(vs_currency='usd', total_pages=2, delay=1):
             "sparkline": False,
             "price_change_percentage": "24h"
         }
-        res = requests.get(url, params=params)
-        if res.status_code == 200:
-            all_data.extend(res.json())
-        else:
-            st.warning(f"Error fetching page {page}: {res.status_code}")
-            break
+
+        try:
+            res = requests.get(url, params=params)
+        except requests.exceptions.RequestException as e:
+            st.error(f"❌ Gagal menghubungi API CoinGecko: {e}")
+            st.stop()
+
+        # Penanganan rate limit
+        if res.status_code == 429:
+            st.error("🚫 Terlalu banyak permintaan (rate limit CoinGecko). Harap tunggu 1–2 menit sebelum refresh.")
+            st.stop()
+
+        # Penanganan selain status OK
+        elif res.status_code != 200:
+            st.warning(f"⚠️ Gagal mengambil data halaman {page}. Kode status: {res.status_code}")
+            st.stop()
+
+        data = res.json()
+        if not data:
+            st.warning(f"⚠️ Data halaman {page} kosong.")
+            st.stop()
+
+        all_data.extend(data)
         time.sleep(delay)
-    return pd.DataFrame(all_data)
+
+    df = pd.DataFrame(all_data)
+
+    # Cek apakah kolom penting ada
+    if 'price_change_percentage_24h' not in df.columns:
+        st.warning("⚠️ Kolom 'price_change_percentage_24h' tidak tersedia. Data mungkin tidak lengkap.")
+        st.stop()
+
+    return df
 
 # Ambil koin trending (ID saja)
 @st.cache_data(ttl=120)
